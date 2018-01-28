@@ -62,6 +62,16 @@ function TaskAtHandApp()
     .blur(function() {
       $(this).hide().siblings("span.task-name").show();
     });
+
+    $("button.toggle-details", $task).click(function() {
+      toggleDetails($task);
+    });
+  }
+
+  function toggleDetails($task)
+  {
+    $(".details", $task).slideToggle();
+    $("button.toggle-details", $task).toggleClass("expanded");
   }
 
   function removeTask($task)

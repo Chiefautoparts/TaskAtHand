@@ -138,7 +138,8 @@ button
 {
   opacity: 1;
 }
-#task-list .task .tools button
+#task-list .task .tools button,
+#task-list .task .toggle-details
 {
   margin: 0;
   padding: 0;
@@ -159,6 +160,14 @@ button
 #task-list .task .tools button.move-down
 {
   background-position: -32px 0;
+}
+#task-list .task button.toggle-details
+{
+  background-position: 0 -16px;
+}
+#task-list .task button.toggle-details.expanded
+{
+  background-position: -16px -16px
 }
 #task-list .task .details
 {
