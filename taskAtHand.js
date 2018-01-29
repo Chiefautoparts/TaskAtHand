@@ -2,21 +2,50 @@
 
 function TaskAtHandApp()
 {
-  var version = "v2.3",
+  var version = "v3.2",
       appStorage = new AppStorage("taskAtHand");
+      taskList = new TaskList();
+      timeoutId = 0;
 
   function setStatus(message)
   {
     $("#app>footer").text(message);
+    if (!noFade)
+    {
+      $("#app>footer").fadeOut(1000);
+    }
   }
 
   function saveTaskList()
   {
-    var tasks = [];
-    $("#task-list .task span.task-name").each(function() {
-      tasks.push($(this).text())
+    if (timeoutId) clearTimeout(timeoutId);
+    setStatus("saving changes...", true);
+    timeoutId = setTimeout(function()
+    {
+      appStorage.setValue("taskList", taskList.getTasks());
+      timeoutId = 0;
+      setStatus("changes saved.");
+    },
+    2000);
+  }
+
+  function loadTaskList()
+  {
+    var tasks = appStorage.getValue("taskList");
+    taskList = new TaskList(tasks);
+    rebuildTaskList();
+  }
+
+  function rebuildTaskList()
+  {
+    // Remove any old task  elements
+    $("#task-list").empty();
+
+    // Create DOM elements for each task
+    taskList.each(function(task)
+    {
+      addTaskElement(task);
     });
-    appStorage.setValue("taskList", tasks);
   }
 
   function addTask()
@@ -24,17 +53,28 @@ function TaskAtHandApp()
     var taskName = $("#new-task-name").val();
     if (taskName)
     {
-      addTaskElement(taskName);
+      var task = new Task(taskName);
+      taskList.addTask(task);
+      appStorage.setValue("nextTaskId", Task.nextTaskId);
+      addTaskElement(task);
+      saveTaskList();
       // Reset the text field
       $("#new-task-name").val("").focus();
-      saveTaskList();
     }
   }
 
-  function addTaskElement(taskName)
+  function addTaskElement(task)
   {
     var $task = $("#task-template .task").clone();
-    $("span.task-name", $task).text(taskName);
+    $task.data("task-id", task.id);
+    $("span.task-name", $task).text(task.name);
+
+    // Populate all of the details fields
+    $(".details input, .details select", $task).each(function(i, e) {
+      var $input = $(this);
+      var fieldName = $input.Data("field");
+      $input.val(task[fieldName]);
+    });
 
     $("#task-list").append($task);
 
@@ -51,6 +91,9 @@ function TaskAtHandApp()
     $("button.move-down", $task).click(function() {
       moveTask($task, false);
     });
+    $("button.toggle-details", $task).click(function() {
+      toggleDetails($task);
+    });
 
     // Task name events
     $("span.task-name", $task).click(function() {
@@ -63,9 +106,8 @@ function TaskAtHandApp()
       $(this).hide().siblings("span.task-name").show();
     });
 
-    $("button.toggle-details", $task).click(function() {
-      toggleDetails($task);
-    });
+    // Task details events
+    $(".details input, .details select", $task).change(function() { onChangeTaskDetails(task.id, $(this)); });
   }
 
   function toggleDetails($task)
@@ -121,6 +163,46 @@ function TaskAtHandApp()
         addTaskElement(tasks[i]);
       }
     }
+  }
+
+  function onChangeTaskDetails(taskId, $input)
+  {
+    var task = taskList.getTask(taskId)
+    if (task)
+    {
+      var fieldName = $input.data("field");
+      task[fieldName] = $input.val();
+      saveTaskList();
+    }
+  }
+
+  function toggleDetails($task)
+  {
+    $(".details", $task).slideToggle();
+    $("button.toggle-details", $task).toggleClass("expanded");
+  }
+
+  function saveTaskList()
+  {
+    appStorage.setValue("taskList", taskList.getTasks());
+  }
+
+  function loadTaskList()
+  {
+    var tasks = appStorage.getValue("taskList");
+    taskList = new TaskList(tasks);
+    rebuildTaskList();
+  }
+
+  function rebuildTaskList()
+  {
+    // Remove any old task elements
+    $("#task-list").empty();
+    // Create DOM elements for each task
+    taskList.each(function(task)
+    {
+      addTaskElement(task);
+    });
   }
 
   function onChangeTheme()

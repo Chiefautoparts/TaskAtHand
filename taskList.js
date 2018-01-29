@@ -66,7 +66,7 @@ function getTaskIndex(taskId)
   {
     var index = getTaskIndex(taskId);
     return (index >= 0 ? tasks[index] : null);
-  };
+  };z
   this.each = function(callback)
   {
     for (var i in tasks)
